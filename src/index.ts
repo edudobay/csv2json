@@ -2,8 +2,8 @@ export function fieldAssigner(fieldSpec: string): RecursiveAssigner {
   const parts = fieldSpec.split('.')
   const _assigners = []
   for (const part of parts) {
-    if (/^\[.*]$/.test(part)) {
-      const index = part.substring(1, part.length - 1)
+    if (/^\[\d+]$/.test(part)) {
+      const index = Number(part.substring(1, part.length - 1))
       _assigners.push(assigners.arrayIndex(index))
     } else {
       _assigners.push(assigners.attr(part))
@@ -38,7 +38,7 @@ class RecursiveAssigner implements Assigner {
 }
 
 const getters = {
-  attribute(name: string) {
+  attribute(name: string|number) {
     return record => record != null ? record[name] : null
   },
 }
@@ -58,7 +58,7 @@ const assigners = {
     )
   },
 
-  arrayIndex(index) {
+  arrayIndex(index: number) {
     return new RecursiveAssigner(
       (record, value) => {
         const output = record == null ? [] : [...record]

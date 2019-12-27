@@ -47,7 +47,34 @@ test('pipe: object | array | object', t => {
   t.deepEqual(result, {users: [{first: 'Barbara'}]});
 })
 
-// TODO: Not implemented yet
-test.skip('two object assignments in a row', t => {
-  const assigner1 = assigners.pipe(assigners.attr('user'))
+test('two object assignments in a row', t => {
+  const assigner1 = assigners.pipe(assigners.attr('user'), assigners.attr('name'));
+  const assigner2 = assigners.pipe(assigners.attr('user'), assigners.attr('phone'));
+
+  const result = assigner2.assign(assigner1.assign(null, 'Grace'), '5557508');
+  t.deepEqual(result, {user: {name: 'Grace', phone: '5557508'}});
+})
+
+test('two overwriting array-object assignments in a row', t => {
+  const assigner1 = assigners.pipe(assigners.attr('users'), assigners.arrayIndex(0));
+  const assigner2 = assigners.pipe(assigners.attr('users'), assigners.arrayIndex(0));
+
+  const result = assigner2.assign(assigner1.assign(null, 'Beth'), 'Oliver');
+  t.deepEqual(result, {users: ['Oliver']});
+})
+
+test('two array-object assignments in a row', t => {
+  const assigner1 = assigners.pipe(assigners.arrayIndex(0), assigners.attr('name'));
+  const assigner2 = assigners.pipe(assigners.arrayIndex(0), assigners.attr('phone'));
+
+  const result = assigner2.assign(assigner1.assign(null, 'Grace'), '5557508');
+  t.deepEqual(result, [{name: 'Grace', phone: '5557508'}]);
+})
+
+test('two object-array-object assignments in a row', t => {
+  const assigner1 = assigners.pipe(assigners.attr('users'), assigners.arrayIndex(0), assigners.attr('name'));
+  const assigner2 = assigners.pipe(assigners.attr('users'), assigners.arrayIndex(0), assigners.attr('phone'));
+
+  const result = assigner2.assign(assigner1.assign(null, 'Grace'), '5557508');
+  t.deepEqual(result, {users: [{name: 'Grace', phone: '5557508'}]});
 })
