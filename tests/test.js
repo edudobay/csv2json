@@ -1,28 +1,28 @@
 import test from 'ava';
-import { assigners } from '../src/index';
+import { assigners } from '../bin/index';
 
 test('object assigner', t => {
-  const [assigner, _] = assigners.attr('color');
-  const result = assigner(null, 'red');
+  const assigner = assigners.attr('color');
+  const result = assigner.assign(null, 'red');
   t.deepEqual(result, {color: 'red'});
 })
 
 test('chained object assigners', t => {
-  const [assigner, _] = assigners.attr('user');
-  const [subAssigner, _2] = assigners.attr('name')
-  const result = assigner(null, subAssigner(null, 'Eric'));
+  const assigner = assigners.attr('user');
+  const subAssigner = assigners.attr('name')
+  const result = assigner.assign(null, subAssigner.assign(null, 'Eric'));
   t.deepEqual(result, {user: {name: 'Eric'}});
 })
 
 test('object assigner\'s associated getter', t => {
-  const [_, getter] = assigners.attr('color');
-  const result = getter({color: 'red'});
+  const assigner = assigners.attr('color');
+  const result = assigner.get({color: 'red'});
   t.is(result, 'red');
 })
 
 test('array index assigner', t => {
-  const [assigner, _] = assigners.arrayIndex(0);
-  const result = assigner(null, 'Robert');
+  const assigner = assigners.arrayIndex(0);
+  const result = assigner.assign(null, 'Robert');
   t.deepEqual(result, ['Robert']);
 })
 
@@ -32,7 +32,7 @@ test('pipe: object assigner | array index assigner', t => {
     assigners.arrayIndex(0),
   )
 
-  const result = assigner(null, 'Robert');
+  const result = assigner.assign(null, 'Robert');
   t.deepEqual(result, {names: ['Robert']});
 })
 
@@ -43,7 +43,7 @@ test('pipe: object | array | object', t => {
     assigners.attr('first'),
   )
 
-  const result = assigner(null, 'Barbara');
+  const result = assigner.assign(null, 'Barbara');
   t.deepEqual(result, {users: [{first: 'Barbara'}]});
 })
 

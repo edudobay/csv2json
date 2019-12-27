@@ -1,4 +1,4 @@
-function fieldAssigner(fieldSpec) {
+export function fieldAssigner(fieldSpec: string): RecursiveAssigner {
   const parts = fieldSpec.split('.')
   const _assigners = []
   for (const part of parts) {
@@ -16,67 +16,89 @@ function fieldAssigner(fieldSpec) {
   return assigners.pipe(..._assigners)
 }
 
+// TODO: Improve type safety
+type Record = any;
+type Value = any;
+
+type FnAssign = (record: Record, value: Value) => Value;
+type FnGet = (record: Record) => Value;
+
+interface Assigner {
+  assign: FnAssign;
+}
+
+class RecursiveAssigner implements Assigner {
+  public readonly assign: FnAssign;
+  public readonly get: FnGet;
+
+  constructor( assign: FnAssign, get: FnGet ) {
+    this.assign = assign;
+    this.get = get;
+  }
+}
+
 const getters = {
-  attribute(name) {
+  attribute(name: string) {
     return record => record != null ? record[name] : null
   },
 }
 
 const assigners = {
   empty() {
-    return (record, value) => record
+    return new RecursiveAssigner(
+      (record: Record, value: Value) => record,
+      (record) => null
+    )
   },
 
-  overwrite() {
-    return (record, value) => value
-  },
-
-  attr(name) {
-    return [
+  attr(name: string) {
+    return new RecursiveAssigner(
       (record, value) => ({ ...record, [name]: value }),
       getters.attribute(name)
-    ]
+    )
   },
 
   arrayIndex(index) {
-    return [
+    return new RecursiveAssigner(
       (record, value) => {
         const output = record == null ? [] : [...record]
         output[index] = value
         return output
       },
       getters.attribute(index)
-    ]
+    )
   },
 
-  pipe(...elements) {
+  pipe(...assigners: RecursiveAssigner[]): RecursiveAssigner {
     // TODO: Behave correctly when only one (or zero) element is given
-    const [lastAssigner, _] = elements.pop()
-    const [assigner, getter] = elements.reduce(
-      ([accAssigner, accGetter], [assigner, getter]) => [
-        (record, value) => accAssigner(
+    return assigners.reduce(
+      (acc, assigner) => new RecursiveAssigner(
+        (record, value) => acc.assign(
           record,
-          assigner(accGetter(record), value)
+          assigner.assign(acc.get(record), value)
         ),
-        getter
-      ],
+        assigner.get.bind(assigner)
+      ),
     )
-    return (record, value) => assigner(record, lastAssigner(getter(record), value))
   },
 }
 
-class CSVReader {
-  constructor({ separator } = {}) {
-    this.separator = separator
-    this.fields = null
-    this.records = []
+export class CSVReader {
+  private separator: string;
+  private fields: RecursiveAssigner[];
+  private records: string[][];
+
+  constructor({ separator }: { separator: string }) {
+    this.separator = separator;
+    this.fields = [];
+    this.records = [];
   }
 
   get headerWasRead() {
     return this.fields != null
   }
 
-  readLine(line) {
+  readLine(line: string) {
     if (this.headerWasRead) {
       this._readRecord(line)
     } else {
@@ -84,11 +106,11 @@ class CSVReader {
     }
   }
 
-  _readHeader(line) {
+  _readHeader(line: string) {
     this.fields = line.split(this.separator).map(fieldSpec => fieldAssigner(fieldSpec))
   }
 
-  _readRecord(line) {
+  _readRecord(line: string) {
     this.records.push(line.split(this.separator))
   }
 
@@ -100,8 +122,8 @@ class CSVReader {
     return {...record, [field]: value}
   }
 
-  _formatRecord(rawRecord) {
-    return this.fields.reduce((record, assigner, index) => assigner(record, rawRecord[index]), {})
+  _formatRecord(rawRecord: string[]) {
+    return this.fields.reduce((record, assigner, index) => assigner.assign(record, rawRecord[index]), {})
   }
 
   getRecords() {
