@@ -26,6 +26,29 @@ test('array index assigner', t => {
   t.deepEqual(result, ['Robert']);
 })
 
+test('array index assigner over already existent array', t => {
+  const assigner = assigners.arrayIndex(0);
+  const result = assigner.assign(['Bellatrix', 'Fabien'], 'Lucy');
+  t.deepEqual(result, ['Lucy', 'Fabien']);
+})
+
+test('pipe getter: object | object', t => {
+  const assigner = assigners.pipe(assigners.attr('user'), assigners.attr('name'));
+  const result = assigner.get({user: {name: 'Darcy'}});
+  t.is('Darcy', result);
+})
+
+test('pipe getter: object | array | object', t => {
+  const assigner = assigners.pipe(
+    assigners.attr('users'),
+    assigners.arrayIndex(0),
+    assigners.attr('first'),
+  )
+
+  const result = assigner.get({users: [{first: 'Barbara'}]});
+  t.is(result, 'Barbara');
+})
+
 test('pipe: object assigner | array index assigner', t => {
   const assigner = assigners.pipe(
     assigners.attr('names'),

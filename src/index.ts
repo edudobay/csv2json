@@ -72,12 +72,14 @@ const assigners = {
   pipe(...assigners: RecursiveAssigner[]): RecursiveAssigner {
     // TODO: Behave correctly when only one (or zero) element is given
     return assigners.reduce(
-      (acc, assigner) => new RecursiveAssigner(
+      (acc, next) => new RecursiveAssigner(
         (record, value) => acc.assign(
           record,
-          assigner.assign(acc.get(record), value)
-        ),
-        assigner.get.bind(assigner)
+          next.assign(
+            acc.get(record),
+            value
+        )),
+        record => next.get(acc.get(record))
       ),
     )
   },
