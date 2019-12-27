@@ -89,3 +89,16 @@ test('two object-array-object assignments in a row', t => {
   const result = assigner2.assign(assigner1.assign(null, 'Grace'), '5557508');
   t.deepEqual(result, {users: [{name: 'Grace', phone: '5557508'}]});
 })
+
+test('pipe with one argument', t => {
+  const assigner = pipe(attr('color'))
+
+  const result = assigner.assign(null, 'red');
+  t.deepEqual(result, {color: 'red'});
+})
+
+test('pipe with no arguments', t => {
+  t.throws(() => {
+    pipe()
+  })
+})

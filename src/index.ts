@@ -70,7 +70,11 @@ const assigners = {
   },
 
   pipe(...assigners: RecursiveAssigner[]): RecursiveAssigner {
-    // TODO: Behave correctly when only one (or zero) element is given
+    if (!assigners.length) {
+      throw new Error('pipe must be called with at least 1 argument')
+    } else if (assigners.length === 1) {
+      return assigners[0]
+    }
     return assigners.reduce(
       (acc, next) => new RecursiveAssigner(
         (record, value) => acc.assign(
